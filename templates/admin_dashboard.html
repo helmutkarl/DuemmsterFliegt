@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Admin Dashboard - Der Dümmste fliegt</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} mt-3">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <h2 class="mt-5">Admin Dashboard</h2>
+        <div class="mb-3">
+            <a href="{{ url_for('add_player') }}" class="btn btn-success">Spieler hinzufügen</a>
+            <a href="{{ url_for('reset_votes') }}" class="btn btn-danger">Stimmen zurücksetzen</a>
+            <a href="{{ url_for('add_round') }}" class="btn btn-info">Neue Runde starten</a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Zurück zur Startseite</a>
+        </div>
+        {% if current_round %}
+        <h4>Aktive Runde: {{ current_round.name }}</h4>
+        {% else %}
+        <h4>Keine aktive Runde.</h4>
+        {% endif %}
+        <h3>Aktuelle Teilnehmer</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Stimmen</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for participant in participants %}
+                <tr>
+                    <td>{{ participant.name }}</td>
+                    <td>{{ participant.votes }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('remove_player', player_id=participant.id) }}"
+                            onsubmit="return confirm('Bist du sicher, dass du {{ participant.name }} entfernen möchtest?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Entfernen</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h3 class="mt-5">Abstimmungsergebnisse</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Abstimmender Spieler</th>
+                    <th>Abgestimmter Spieler</th>
+                    <th>Runde</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vote in votes %}
+                <tr>
+                    <td>{{ vote.voter.name }}</td>
+                    <td>{{ vote.voted_for.name }}</td>
+                    <td>{{ vote.round.name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+
+</html>

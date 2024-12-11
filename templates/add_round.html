@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Neue Runde starten - Der Dümmste fliegt</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} mt-3">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <h2 class="mt-5">Neue Runde starten</h2>
+        <form method="POST" action="{{ url_for('add_round') }}">
+            <div class="form-group">
+                <label for="name">Rundenname:</label>
+                <input type="text" class="form-control" id="name" name="name" required readonly
+                    value="Automatisch generiert">
+                <small class="form-text text-muted">Der Rundenname wird automatisch hochgezählt.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Runde starten</button>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Zurück zum Dashboard</a>
+        </form>
+    </div>
+</body>
+
+</html>

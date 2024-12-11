@@ -1,42 +1,22 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Der Dümmste fliegt</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
+
 <body>
     <div class="container">
-        <h1 class="mt-5">Der Dümmste fliegt</h1>
-        <form action="/vote" method="POST">
-            <div class="form-group">
-                <label for="participant">Wer fliegt?</label>
-                <select class="form-control" id="participant" name="participant">
-                    {% for participant in participants %}
-                        <option value="{{ participant.id }}">{{ participant.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Abstimmen</button>
-        </form>
-        <h2 class="mt-5">Aktuelle Stimmen</h2>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Stimmen</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for participant in participants %}
-                    <tr>
-                        <td>{{ participant.name }}</td>
-                        <td>{{ participant.votes }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <a href="/reset" class="btn btn-danger">Stimmen zurücksetzen</a>
-	<a href="/add" class="btn btn-success mt-3">Teilnehmer hinzufügen</a>
+        <h1 class="mt-5">Willkommen zu "Der Dümmste fliegt"</h1>
+        {% if current_round %}
+        <p>Aktive Runde: <strong>{{ current_round.name }}</strong></p>
+        {% else %}
+        <p>Keine aktive Runde. Warte auf den Admin, um eine neue Runde zu starten.</p>
+        {% endif %}
+        <a href="{{ url_for('player_vote') }}" class="btn btn-primary mt-3">Abstimmen</a>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mt-3">Admin Dashboard</a>
     </div>
 </body>
+
 </html>
