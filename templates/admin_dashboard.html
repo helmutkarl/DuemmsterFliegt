@@ -1,77 +1,58 @@
-<!DOCTYPE html>
-<html lang="de">
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - Der Dümmste fliegt{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        .container {
-            margin-top: 20px;
-        }
+{% block content %}
+<h2>Admin Dashboard</h2>
+<p>Aktuelle Runde: <span id="current-round">{{ current_round_name }}</span></p>
+<div class="mb-3">
+    <a href="{{ url_for('add_player') }}" class="btn btn-primary">Spieler hinzufügen</a>
+    <a href="{{ url_for('reset_votes') }}" class="btn btn-warning">Stimmen zurücksetzen</a>
+    <a href="{{ url_for('rounds.add_round') }}" class="btn btn-success">Neue Runde starten</a>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">Logout</a>
+</div>
+<table class="table table-bordered" id="participants-table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Stimmen</th>
+        </tr>
+    </thead>
+    <tbody id="participants-body">
+        {% for participant in participants %}
+        <tr>
+            <td>{{ participant.name }}</td>
+            <td>{{ participant.votes }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
 
-        table {
-            width: 100%;
-        }
+{% block scripts %}
+<script>
+    function updateGameData() {
+        fetch("{{ url_for('get_game_data') }}")
+            .then(response => response.json())
+            .then(data => {
+                // Runde aktualisieren
+                document.getElementById('current-round').textContent = data.round_name;
 
-        th,
-        td {
-            padding: 10px;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container">
-        <h2>Admin Dashboard</h2>
-        <div class="mb-3">
-            <a href="{{ url_for('add_player') }}" class="btn btn-primary">Spieler hinzufügen</a>
-            <a href="{{ url_for('reset_votes') }}" class="btn btn-warning">Stimmen zurücksetzen</a>
-            <a href="{{ url_for('add_round') }}" class="btn btn-success">Neue Runde starten</a>
-        </div>
-        <table class="table table-bordered" id="participants-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Stimmen</th>
-                </tr>
-            </thead>
-            <tbody id="participants-body">
-                {% for participant in participants %}
-                <tr>
-                    <td>{{ participant.name }}</td>
-                    <td>{{ participant.votes }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <script>
-        // Funktion zum Aktualisieren der Tabelle
-        function updateParticipants() {
-            fetch("{{ url_for('get_participants_data') }}")
-                .then(response => response.json())
-                .then(data => {
-                    const tbody = document.getElementById('participants-body');
-                    tbody.innerHTML = '';
-                    data.forEach(p => {
-                        const row = document.createElement('tr');
-                        const nameCell = document.createElement('td');
-                        const votesCell = document.createElement('td');
-                        nameCell.textContent = p.name;
-                        votesCell.textContent = p.votes;
-                        row.appendChild(nameCell);
-                        row.appendChild(votesCell);
-                        tbody.appendChild(row);
-                    });
-                })
-                .catch(error => console.error('Error fetching participant data:', error));
-        }
-
-        // Alle 2 Sekunden die Daten aktualisieren
-        setInterval(updateParticipants, 2000);
-    </script>
-</body>
-
-</html>
+                // Teilnehmer aktualisieren
+                const tbody = document.getElementById('participants-body');
+                tbody.innerHTML = '';
+                data.participants.forEach(p => {
+                    const row = document.createElement('tr');
+                    const nameCell = document.createElement('td');
+                    const votesCell = document.createElement('td');
+                    nameCell.textContent = p.name;
+                    votesCell.textContent = p.votes;
+                    row.appendChild(nameCell);
+                    row.appendChild(votesCell);
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Error fetching game data:', error));
+    }
+    setInterval(updateGameData, 5000);
+</script>
+{% endblock %}

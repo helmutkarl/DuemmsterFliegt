@@ -1,100 +1,47 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
+{% block title %}Abstimmen - Der Dümmste fliegt{% endblock %}
+{% block content %}
+<h2>User Ansicht</h2>
+<p>Aktuelle Runde: <span id="current-round">{{ current_round_name }}</span></p>
 
-<head>
-    <title>Abstimmen - Der Dümmste fliegt</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-</head>
-
-<body>
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} mt-3">
-            {{ message }}
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-
-        {% if step == 'select_player' %}
-        <h2 class="mt-5">Wähle deinen Spielernamen</h2>
-        <p>Aktive Runde: <strong>{{ current_round.name }}</strong></p>
-        <form method="POST" action="{{ url_for('player_vote') }}">
-            <div class="form-group">
-                <label for="selected_player">Spielername:</label>
-                <select class="form-control" id="selected_player" name="selected_player" required>
-                    <option value="" disabled selected>Wähle deinen Spielernamen aus</option>
-                    {% for participant in participants %}
-                    <option value="{{ participant.id }}">{{ participant.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Weiter</button>
-            <a href="{{ url_for('index') }}" class="btn btn-secondary">Zurück zur Startseite</a>
-        </form>
-        {% elif step == 'cast_vote' %}
-        <h2 class="mt-5">Abstimmen</h2>
-        <p>Aktive Runde: <strong>{{ current_round.name }}</strong></p>
-        <p>Du bist: <strong>{{ current_player.name if current_player else 'Unbekannt' }}</strong></p>
-        <form method="POST" action="{{ url_for('cast_vote') }}">
-            <div class="form-group">
-                <label for="participant">Für wen möchtest du abstimmen?</label>
-                <select class="form-control" id="participant" name="participant" required>
-                    <option value="" disabled selected>Wähle einen Teilnehmer aus</option>
-                    {% for participant in participants %}
-                    <option value="{{ participant.id }}">{{ participant.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Abstimmen</button>
-            <a href="{{ url_for('index') }}" class="btn btn-secondary">Zurück zur Startseite</a>
-        </form>
-        <a href="{{ url_for('logout') }}" class="btn btn-warning mt-3">Identität ändern</a>
-        {% elif step == 'already_voted' %}
-        <h2 class="mt-5">Abstimmung abgeschlossen</h2>
-        <p>Aktive Runde: <strong>{{ current_round.name }}</strong></p>
-        <p>Du hast bereits abgestimmt. Vielen Dank für deine Teilnahme!</p>
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">Zurück zur Startseite</a>
-        <a href="{{ url_for('logout') }}" class="btn btn-warning mt-3">Identität ändern</a>
-        {% endif %}
+{% if step == 'select_player' %}
+<form method="POST" action="{{ url_for('player_vote') }}">
+    <div class="form-group">
+        <label for="selected_player">Wer bist du?</label>
+        <select name="selected_player" id="selected_player" class="form-control">
+            {% for participant in participants %}
+            <option value="{{ participant.id }}">{{ participant.name }}</option>
+            {% endfor %}
+        </select>
     </div>
+    <button type="submit" class="btn btn-primary mt-2">Weiter</button>
+</form>
+{% elif step == 'cast_vote' %}
+<form method="POST" action="{{ url_for('cast_vote') }}">
+    <div class="form-group">
+        <label for="participant">Wen wählst du?</label>
+        <select name="participant" id="participant" class="form-control">
+            {% for participant in participants %}
+            <option value="{{ participant.id }}">{{ participant.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Abstimmen</button>
+</form>
+<a href="{{ url_for('change_user') }}" class="btn btn-link mt-2">Benutzer ändern</a>
+{% endif %}
+{% endblock %}
 
-    <script>
-        // Aktuelle Runde ID speichern
-        var currentRoundId = {{ current_round.id if current_round else 'null' }};
-        var checkInterval = 5000; // 5 Sekunden
-
-        function checkForNewRound() {
-            $.getJSON('{{ url_for("current_round_route") }}', function (data) {
-                if (data.id !== currentRoundId && data.id !== null) {
-                    // Neue Runde erkannt
-                    alert('Eine neue Runde wurde gestartet! Du kannst jetzt erneut abstimmen.');
-                    location.reload(); // Seite neu laden, um neue Runde anzuzeigen
-                }
-            }).fail(function () {
-                console.error('Fehler beim Abrufen der aktuellen Runde.');
-            });
-        }
-
-        // Alle 5 Sekunden prüfen
-        setInterval(checkForNewRound, checkInterval);
-
-        // Optional: "Neue Runde prüfen" Button hinzufügen
-        // Füge diesen Button im HTML-Bereich ein, z.B. unterhalb des Formulars
-        /*
-        <button id="check_round" class="btn btn-info mt-3">Neue Runde prüfen</button>
-        */
-
-        /*
-        // Und erweitere das JavaScript:
-        $('#check_round').click(function(){
-            checkForNewRound();
-        });
-        */
-    </script>
-</body>
-
-</html>
+{% block scripts %}
+<script>
+    function updateRoundName() {
+        fetch("{{ url_for('get_game_data') }}")
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('current-round').textContent = data.round_name;
+            })
+            .catch(error => console.error('Error fetching game data:', error));
+    }
+    setInterval(updateRoundName, 5000);
+</script>
+{% endblock %}

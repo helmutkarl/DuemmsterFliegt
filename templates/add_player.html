@@ -1,32 +1,9 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <title>Spieler hinzufügen - Der Dümmste fliegt</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-
-<body>
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} mt-3">
-            {{ message }}
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-        <h2 class="mt-5">Spieler hinzufügen</h2>
-        <form method="POST" action="{{ url_for('add_player') }}">
-            <div class="form-group">
-                <label for="name">Spielername:</label>
-                <input type="text" class="form-control" id="name" name="name" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Spieler hinzufügen</button>
-            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Zurück zum Dashboard</a>
-        </form>
-    </div>
-</body>
-
-</html>
+{% extends "base.html" %}
+{% block title %}Spieler hinzufügen{% endblock %}
+{% block content %}
+<h2>Spieler hinzufügen</h2>
+<form method="POST" action="{{ url_for('add_player') }}">
+    <input type="text" id="name" name="name" class="form-control" required>
+    <button type="submit" class="btn btn-primary mt-2">Spieler hinzufügen</button>
+</form>
+{% endblock %}

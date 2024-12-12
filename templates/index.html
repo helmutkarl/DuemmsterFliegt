@@ -1,22 +1,6 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <title>Der Dümmste fliegt</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-</head>
-
-<body>
-    <div class="container">
-        <h1 class="mt-5">Willkommen zu "Der Dümmste fliegt"</h1>
-        {% if current_round %}
-        <p>Aktive Runde: <strong>{{ current_round.name }}</strong></p>
-        {% else %}
-        <p>Keine aktive Runde. Warte auf den Admin, um eine neue Runde zu starten.</p>
-        {% endif %}
-        <a href="{{ url_for('player_vote') }}" class="btn btn-primary mt-3">Abstimmen</a>
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mt-3">Admin Dashboard</a>
-    </div>
-</body>
-
-</html>
+{% extends "base.html" %}
+{% block title %}Startseite - Der Dümmste fliegt{% endblock %}
+{% block content %}
+<h1>Willkommen zu "Der Dümmste fliegt"</h1>
+<p>Wähle oben zwischen Admin Dashboard (mit Passwort) oder User Ansicht.</p>
+{% endblock %}
