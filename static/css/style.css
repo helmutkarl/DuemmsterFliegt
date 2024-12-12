@@ -1,0 +1,72 @@
+body {
+    font-size: 1.4rem;
+    /* Grundsätzlich etwas größere Schrift für mobile */
+}
+
+.navbar-brand,
+.nav-link {
+    font-size: 1.6rem;
+    /* Noch größere Schrift im Header/Navi */
+}
+
+label,
+.btn,
+.card-title,
+.card-text {
+    font-size: 1.4rem;
+    /* Formulare, Buttons und Karteninhalte noch etwas größer */
+}
+
+@media (max-width: 576px) {
+    body {
+        font-size: 1.5rem;
+    }
+
+    .navbar-brand,
+    .nav-link {
+        font-size: 1.7rem;
+    }
+}
+
+/* Spezifische Anpassungen für player_vote.html */
+
+.player-vote-container h2.display-4 {
+    font-size: 3rem;
+    /* Noch größerer Titel */
+}
+
+.player-vote-container .lead {
+    font-size: 1.6rem;
+}
+
+.player-vote-container .card-title {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.player-vote-container .card .form-control-lg {
+    font-size: 1.6rem;
+}
+
+.player-vote-container .btn-lg {
+    font-size: 1.6rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.player-vote-container .card {
+    margin-bottom: 2.5rem;
+    padding: 1.5rem;
+}
+
+.player-vote-container .card-body {
+    padding: 2rem;
+}
+
+.player-vote-container .text-center {
+    margin-bottom: 2.5rem;
+}
+
+.player-vote-container .btn-link {
+    font-size: 1.6rem;
+}

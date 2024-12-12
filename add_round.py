@@ -10,7 +10,7 @@ def get_current_round():
     return Round.query.order_by(Round.id.desc()).first()
 
 def apply_round_end_logic():
-    # Runde beenden: Spieler mit den meisten Stimmen verlieren ein Herz
+    # Runde beenden: Nur lose_count Spieler mit den meisten Stimmen verlieren ein Herz.
     setting = GameSetting.query.first()
     if not setting:
         setting = GameSetting(start_hearts=3, lose_count=1)
@@ -19,9 +19,12 @@ def apply_round_end_logic():
         
     lose_count = setting.lose_count
     participants = Participant.query.order_by(Participant.votes.desc()).all()
-    # Top X verlieren ein Herz, aber nur wenn es schon mind. eine Runde gab
     current_round = get_current_round()
-    if current_round:  # Nur wenn es bereits mind. eine Runde gab
+
+    if current_round:
+        # Wir bestimmen die Top-Spieler
+        # Alle Spieler sind nach Stimmen sortiert. Wir nehmen einfach die ersten lose_count Spieler aus dieser Liste.
+        # Falls Gleichstand besteht, werden trotzdem nur diese ersten lose_count Spieler berücksichtigt.
         losers = participants[:lose_count]
         for l in losers:
             if l.hearts > 0:
@@ -30,6 +33,7 @@ def apply_round_end_logic():
         for p in participants:
             p.votes = 0
         db.session.commit()
+
 
 @rounds_bp.route('/add_round', methods=['GET'])
 def add_round():

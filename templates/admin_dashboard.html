@@ -9,7 +9,11 @@
     <a href="{{ url_for('reset_votes') }}" class="btn btn-warning">Stimmen zurücksetzen</a>
     <a href="{{ url_for('rounds.add_round') }}" class="btn btn-success">Neue Runde starten</a>
     <a href="{{ url_for('new_game') }}" class="btn btn-info">Neues Spiel</a>
-    <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">Logout</a>
+    <form style="display:inline;" method="POST" action="{{ url_for('delete_all_data') }}">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Alle Daten löschen?')">Alle Daten
+            löschen</button>
+    </form>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">Logout</a>
 </div>
 <p><b>Einstellungen:</b> Start-Herzen: {{ setting.start_hearts }}, verlieren pro Runde: {{ setting.lose_count }}</p>
 <p><b>Abstimmungsfortschritt:</b> <span id="votes-count">{{ votes_count }}</span>/<span id="total-active">{{
@@ -22,6 +26,7 @@
             <th>Name</th>
             <th>Stimmen</th>
             <th>Herzen</th>
+            <th>Aktionen</th>
         </tr>
     </thead>
     <tbody id="participants-body">
@@ -30,6 +35,13 @@
             <td>{{ participant.name }}</td>
             <td>{{ participant.votes }}</td>
             <td>{{ participant.hearts }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('delete_player', player_id=participant.id) }}"
+                    style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger"
+                        onclick="return confirm('Spieler wirklich entfernen?')">Entfernen</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -74,19 +86,36 @@
                     const nameCell = document.createElement('td');
                     const votesCell = document.createElement('td');
                     const heartsCell = document.createElement('td');
+                    const actionCell = document.createElement('td');
+
                     nameCell.textContent = p.name;
                     votesCell.textContent = p.votes;
                     heartsCell.textContent = p.hearts;
+
+                    // Button für Entfernen
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = "{{ url_for('delete_player', player_id=0) }}".replace('0', p.id);
+                    form.style.display = 'inline';
+                    const btn = document.createElement('button');
+                    btn.type = 'submit';
+                    btn.className = 'btn btn-sm btn-danger';
+                    btn.textContent = 'Entfernen';
+                    btn.onclick = () => confirm('Spieler wirklich entfernen?');
+                    form.appendChild(btn);
+                    actionCell.appendChild(form);
+
                     row.appendChild(nameCell);
                     row.appendChild(votesCell);
                     row.appendChild(heartsCell);
+                    row.appendChild(actionCell);
+
                     tbody.appendChild(row);
                 });
             })
             .catch(error => console.error('Error fetching game data:', error));
     }
 
-    // NEU: Update der abgegebenen Stimmen
     function updateVotesData() {
         fetch("{{ url_for('get_current_votes') }}")
             .then(response => response.json())
@@ -109,7 +138,6 @@
                         votesBody.appendChild(row);
                     });
                 } else {
-                    // Keine Stimmen
                     if (!noVotesMsg) {
                         const p = document.createElement('p');
                         p.id = 'no-votes-msg';
@@ -118,16 +146,13 @@
                     }
                 }
 
-                // Update der Votes-Count Anzeige
                 document.getElementById('votes-count').textContent = data.votes_count;
                 document.getElementById('total-active').textContent = data.total_active;
             })
             .catch(error => console.error('Error fetching votes data:', error));
     }
 
-    // Aktualisiere Teilnehmer und Rundennamen
-    setInterval(updateGameData, 2000);
-    // Aktualisiere Stimmabgaben und Fortschritt
-    setInterval(updateVotesData, 2000);
+    setInterval(updateGameData, 5000);
+    setInterval(updateVotesData, 5000);
 </script>
 {% endblock %}

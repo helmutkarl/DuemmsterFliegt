@@ -1,41 +1,61 @@
 {% extends "base.html" %}
 {% block title %}Abstimmen - Der Dümmste fliegt{% endblock %}
 {% block content %}
-<h2>User Ansicht</h2>
-<p>Aktuelle Runde: <span id="current-round">{{ current_round_name }}</span></p>
-
-{% if current_player %}
-<p>Du bist: <b>{{ current_player.name }}</b> (Herzen: {{ current_player.hearts }})</p>
-{% endif %}
-
-{% if step == 'select_player' %}
-<form method="POST" action="{{ url_for('player_vote') }}">
-    <div class="form-group">
-        <label for="selected_player">Wer bist du?</label>
-        <select name="selected_player" id="selected_player" class="form-control">
-            {% for participant in participants %}
-            <option value="{{ participant.id }}">{{ participant.name }}</option>
-            {% endfor %}
-        </select>
+<div class="container-fluid player-vote-container">
+    <h2 class="mt-4 mb-5 text-center display-4">User Ansicht</h2>
+    <div class="mb-5 text-center">
+        <p class="lead">Aktuelle Runde: <span id="current-round">{{ current_round_name }}</span></p>
     </div>
-    <button type="submit" class="btn btn-primary mt-2">Weiter</button>
-</form>
-{% elif step == 'cast_vote' %}
-<form method="POST" action="{{ url_for('cast_vote') }}">
-    <div class="form-group">
-        <label for="participant">Wen wählst du?</label>
-        <select name="participant" id="participant" class="form-control">
-            {% for participant in participants %}
-            <option value="{{ participant.id }}">{{ participant.name }}</option>
-            {% endfor %}
-        </select>
+
+    {% if current_player %}
+    <div class="card mb-5 shadow-sm">
+        <div class="card-body text-center">
+            <p class="mb-3 lead">Du bist:</p>
+            <h4 class="card-title">{{ current_player.name }}</h4>
+            <p class="card-text">Herzen: {{ current_player.hearts }}</p>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary mt-2">Abstimmen</button>
-</form>
-{% endif %}
-{% if current_player or step == 'cast_vote' %}
-<a href="{{ url_for('change_user') }}" class="btn btn-link mt-2">Benutzer ändern</a>
-{% endif %}
+    {% endif %}
+
+    {% if step == 'select_player' %}
+    <div class="card mb-5 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Wer bist du?</h5>
+            <form method="POST" action="{{ url_for('player_vote') }}">
+                <div class="form-group mb-4">
+                    <label for="selected_player" class="mb-3">Spieler auswählen:</label>
+                    <select name="selected_player" id="selected_player" class="form-control form-control-lg">
+                        {% for participant in participants %}
+                        <option value="{{ participant.id }}">{{ participant.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100">Weiter</button>
+            </form>
+        </div>
+    </div>
+    {% elif step == 'cast_vote' %}
+    <div class="card mb-5 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Wen wählst du?</h5>
+            <form method="POST" action="{{ url_for('cast_vote') }}">
+                <div class="form-group mb-4">
+                    <label for="participant" class="mb-3">Spieler auswählen:</label>
+                    <select name="participant" id="participant" class="form-control form-control-lg">
+                        {% for participant in participants %}
+                        <option value="{{ participant.id }}">{{ participant.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success btn-lg w-100">Abstimmen</button>
+            </form>
+        </div>
+    </div>
+    <div class="text-center mb-5">
+        <a href="{{ url_for('change_user') }}" class="btn btn-link">Benutzer ändern</a>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block scripts %}

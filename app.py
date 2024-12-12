@@ -124,18 +124,17 @@ def new_game():
             setting.start_hearts = start_hearts
             setting.lose_count = lose_count
 
-        # Herzen und Stimmen resetten
         participants = Participant.query.all()
         for p in participants:
             p.hearts = start_hearts
             p.votes = 0
         db.session.commit()
 
-        # Alle Votes löschen, damit keine ungültigen Verweise bestehen bleiben
+        # Votes löschen
         Vote.query.delete()
         db.session.commit()
 
-        # Alle Runden löschen
+        # Runden löschen
         Round.query.delete()
         db.session.commit()
 
@@ -188,6 +187,10 @@ def cast_vote():
     voted_for_id = request.form.get('participant')
     current_r = get_current_round()
 
+    if not current_r:
+        flash("Es ist derzeit keine Runde aktiv, du kannst nicht abstimmen!", "danger")
+        return redirect(url_for('player_vote'))
+
     voter = Participant.query.get(int(voter_id)) if voter_id else None
     if voter is not None and voter.hearts == 0:
         flash("Du hast keine Herzen mehr und kannst nicht mehr abstimmen!", "danger")
@@ -202,9 +205,9 @@ def cast_vote():
             db.session.commit()
             flash(f"Deine Stimme wurde für {voted_for.name} abgegeben!", "success")
         else:
-            flash("Ungültige Auswahl (entweder Spieler existiert nicht oder hat 0 Herzen).", "danger")
+            flash("Ungültige Auswahl oder Spieler kann nicht mehr gewählt werden.", "danger")
     else:
-        flash("Es ist ein Fehler beim Abstimmen aufgetreten!", "danger")
+        flash("Es ist derzeit keine Runde aktiv, du kannst nicht abstimmen!", "danger")
 
     return redirect(url_for('player_vote'))
 
@@ -219,7 +222,6 @@ def get_game_data():
         'participants': participants_data
     })
 
-# Endpunkt, um aktuelle Stimmen dynamisch zu laden
 @app.route('/get_current_votes', methods=['GET'])
 def get_current_votes():
     current_r = get_current_round()
@@ -233,7 +235,6 @@ def get_current_votes():
             'voter': v.voter.name,
             'voted_for': v.voted_for.name
         })
-    # Aktive Spieler
     active_participants = Participant.query.filter(Participant.hearts > 0).all()
     total_active = len(active_participants)
     votes_count = db.session.query(distinct(Vote.voter_id)).filter(Vote.round_id == current_r.id).count()
@@ -243,6 +244,38 @@ def get_current_votes():
         'votes_count': votes_count,
         'total_active': total_active
     })
+
+@app.route('/delete_player/<int:player_id>', methods=['POST'])
+def delete_player(player_id):
+    if not is_admin_logged_in():
+        return redirect(url_for('admin_login'))
+    player = Participant.query.get(player_id)
+    if player:
+        # Entferne auch alle Votes, in denen dieser Spieler vorkommt
+        # Alternativ einfach löschen (durch cascade?), aber hier machen wir es manuell:
+        Vote.query.filter((Vote.voter_id == player_id) | (Vote.voted_for_id == player_id)).delete()
+        db.session.delete(player)
+        db.session.commit()
+        flash(f"Spieler {player.name} entfernt.", "info")
+    else:
+        flash("Spieler wurde nicht gefunden.", "danger")
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/delete_all_data', methods=['POST'])
+def delete_all_data():
+    if not is_admin_logged_in():
+        return redirect(url_for('admin_login'))
+    # Komplett DB neu erstellen
+    db.drop_all()
+    db.create_all()
+
+    # Erneut die Standard-GameSettings hinzufügen
+    setting = GameSetting(start_hearts=3, lose_count=1)
+    db.session.add(setting)
+    db.session.commit()
+
+    flash("Alle Daten wurden gelöscht und die DB neu erstellt!", "warning")
+    return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0")
