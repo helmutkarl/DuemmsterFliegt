@@ -1,30 +1,41 @@
 body {
-    font-size: 1.4rem;
-    /* Grundsätzlich etwas größere Schrift für mobile */
+    font-size: 1.6rem;
 }
 
 .navbar-brand,
 .nav-link {
-    font-size: 1.6rem;
-    /* Noch größere Schrift im Header/Navi */
+    font-size: 1.8rem;
 }
 
 label,
 .btn,
 .card-title,
 .card-text {
-    font-size: 1.4rem;
-    /* Formulare, Buttons und Karteninhalte noch etwas größer */
+    font-size: 1.6rem;
+}
+
+.container {
+    max-width: 95%;
+}
+
+.container-fluid {
+    max-width: 95% !important;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.m-3 {
+    margin: 0.5rem !important;
 }
 
 @media (max-width: 576px) {
     body {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
     }
 
     .navbar-brand,
     .nav-link {
-        font-size: 1.7rem;
+        font-size: 1.8rem;
     }
 }
 
@@ -32,24 +43,23 @@ label,
 
 .player-vote-container h2.display-4 {
     font-size: 3rem;
-    /* Noch größerer Titel */
 }
 
 .player-vote-container .lead {
-    font-size: 1.6rem;
+    font-size: 2.4rem;
 }
 
 .player-vote-container .card-title {
-    font-size: 1.8rem;
+    font-size: 2rem;
     font-weight: bold;
 }
 
 .player-vote-container .card .form-control-lg {
-    font-size: 1.6rem;
+    font-size: 2rem;
 }
 
 .player-vote-container .btn-lg {
-    font-size: 1.6rem;
+    font-size: 2rem;
     padding-top: 1rem;
     padding-bottom: 1rem;
 }
@@ -68,5 +78,5 @@ label,
 }
 
 .player-vote-container .btn-link {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
 }
