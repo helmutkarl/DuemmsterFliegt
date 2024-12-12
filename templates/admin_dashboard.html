@@ -8,13 +8,20 @@
     <a href="{{ url_for('add_player') }}" class="btn btn-primary">Spieler hinzufügen</a>
     <a href="{{ url_for('reset_votes') }}" class="btn btn-warning">Stimmen zurücksetzen</a>
     <a href="{{ url_for('rounds.add_round') }}" class="btn btn-success">Neue Runde starten</a>
+    <a href="{{ url_for('new_game') }}" class="btn btn-info">Neues Spiel</a>
     <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">Logout</a>
 </div>
+<p><b>Einstellungen:</b> Start-Herzen: {{ setting.start_hearts }}, verlieren pro Runde: {{ setting.lose_count }}</p>
+<p><b>Abstimmungsfortschritt:</b> <span id="votes-count">{{ votes_count }}</span>/<span id="total-active">{{
+        total_active }}</span> haben abgestimmt</p>
+
+<h3>Spielerübersicht</h3>
 <table class="table table-bordered" id="participants-table">
     <thead>
         <tr>
             <th>Name</th>
             <th>Stimmen</th>
+            <th>Herzen</th>
         </tr>
     </thead>
     <tbody id="participants-body">
@@ -22,10 +29,32 @@
         <tr>
             <td>{{ participant.name }}</td>
             <td>{{ participant.votes }}</td>
+            <td>{{ participant.hearts }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<h3>Abgegebene Stimmen dieser Runde</h3>
+<table class="table table-bordered" id="votes-table">
+    <thead>
+        <tr>
+            <th>Wähler</th>
+            <th>Gewählter</th>
+        </tr>
+    </thead>
+    <tbody id="votes-body">
+        {% for v in votes_this_round %}
+        <tr>
+            <td>{{ v.voter.name }}</td>
+            <td>{{ v.voted_for.name }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if votes_this_round|length == 0 %}
+<p id="no-votes-msg">Noch keine Stimmen in dieser Runde.</p>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
@@ -44,15 +73,61 @@
                     const row = document.createElement('tr');
                     const nameCell = document.createElement('td');
                     const votesCell = document.createElement('td');
+                    const heartsCell = document.createElement('td');
                     nameCell.textContent = p.name;
                     votesCell.textContent = p.votes;
+                    heartsCell.textContent = p.hearts;
                     row.appendChild(nameCell);
                     row.appendChild(votesCell);
+                    row.appendChild(heartsCell);
                     tbody.appendChild(row);
                 });
             })
             .catch(error => console.error('Error fetching game data:', error));
     }
-    setInterval(updateGameData, 5000);
+
+    // NEU: Update der abgegebenen Stimmen
+    function updateVotesData() {
+        fetch("{{ url_for('get_current_votes') }}")
+            .then(response => response.json())
+            .then(data => {
+                const votesBody = document.getElementById('votes-body');
+                const noVotesMsg = document.getElementById('no-votes-msg');
+                votesBody.innerHTML = '';
+                if (data.votes.length > 0) {
+                    if (noVotesMsg) {
+                        noVotesMsg.remove();
+                    }
+                    data.votes.forEach(v => {
+                        const row = document.createElement('tr');
+                        const voterCell = document.createElement('td');
+                        const votedForCell = document.createElement('td');
+                        voterCell.textContent = v.voter;
+                        votedForCell.textContent = v.voted_for;
+                        row.appendChild(voterCell);
+                        row.appendChild(votedForCell);
+                        votesBody.appendChild(row);
+                    });
+                } else {
+                    // Keine Stimmen
+                    if (!noVotesMsg) {
+                        const p = document.createElement('p');
+                        p.id = 'no-votes-msg';
+                        p.textContent = 'Noch keine Stimmen in dieser Runde.';
+                        votesBody.parentElement.parentElement.appendChild(p);
+                    }
+                }
+
+                // Update der Votes-Count Anzeige
+                document.getElementById('votes-count').textContent = data.votes_count;
+                document.getElementById('total-active').textContent = data.total_active;
+            })
+            .catch(error => console.error('Error fetching votes data:', error));
+    }
+
+    // Aktualisiere Teilnehmer und Rundennamen
+    setInterval(updateGameData, 2000);
+    // Aktualisiere Stimmabgaben und Fortschritt
+    setInterval(updateVotesData, 2000);
 </script>
 {% endblock %}

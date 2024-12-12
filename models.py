@@ -2,6 +2,11 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+class GameSetting(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    start_hearts = db.Column(db.Integer, default=3)
+    lose_count = db.Column(db.Integer, default=1)
+
 class Round(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
@@ -10,6 +15,7 @@ class Participant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
     votes = db.Column(db.Integer, default=0)
+    hearts = db.Column(db.Integer, default=3)  # Neue Spalte für Herzen
 
 class Vote(db.Model):
     id = db.Column(db.Integer, primary_key=True)

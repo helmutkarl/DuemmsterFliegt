@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Neues Spiel - Der Dümmste fliegt{% endblock %}
+{% block content %}
+<h2>Neues Spiel starten</h2>
+<form method="POST" action="{{ url_for('new_game') }}">
+    <div class="form-group">
+        <label>Start-Herzen pro Spieler:</label>
+        <input type="number" name="start_hearts" class="form-control" value="3" required>
+    </div>
+    <div class="form-group">
+        <label>Wie viele Spieler verlieren pro Runde ein Herz?</label>
+        <input type="number" name="lose_count" class="form-control" value="1" required>
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Neues Spiel starten</button>
+</form>
+{% endblock %}

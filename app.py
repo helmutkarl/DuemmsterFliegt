@@ -1,7 +1,8 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
-from models import db, Round, Participant, Vote
+from models import db, Round, Participant, Vote, GameSetting
 from add_round import rounds_bp
+from sqlalchemy import distinct
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -13,6 +14,12 @@ app.config['SECRET_KEY'] = 'dein_geheimnis_schluessel'
 db.init_app(app)
 app.app_context().push()
 db.create_all()
+
+# Falls kein GameSetting existiert, erstellen
+if not GameSetting.query.first():
+    setting = GameSetting(start_hearts=3, lose_count=1)
+    db.session.add(setting)
+    db.session.commit()
 
 app.register_blueprint(rounds_bp)
 
@@ -35,7 +42,24 @@ def admin_dashboard():
     participants = Participant.query.all()
     current_r = get_current_round()
     current_round_name = current_r.name if current_r else "Keine Runde"
-    return render_template('admin_dashboard.html', participants=participants, current_round_name=current_round_name)
+    setting = GameSetting.query.first()
+
+    active_participants = Participant.query.filter(Participant.hearts > 0).all()
+    total_active = len(active_participants)
+
+    votes_this_round = []
+    votes_count = 0
+    if current_r:
+        votes_this_round = Vote.query.filter_by(round_id=current_r.id).all()
+        votes_count = db.session.query(distinct(Vote.voter_id)).filter(Vote.round_id == current_r.id).count()
+
+    return render_template('admin_dashboard.html',
+                           participants=participants,
+                           current_round_name=current_round_name,
+                           setting=setting,
+                           total_active=total_active,
+                           votes_count=votes_count,
+                           votes_this_round=votes_this_round)
 
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
@@ -66,7 +90,8 @@ def add_player():
             if Participant.query.filter_by(name=name).first():
                 flash("Spieler existiert bereits.", "warning")
             else:
-                new_player = Participant(name=name)
+                setting = GameSetting.query.first()
+                new_player = Participant(name=name, hearts=setting.start_hearts)
                 db.session.add(new_player)
                 db.session.commit()
                 flash("Spieler hinzugefügt!", "success")
@@ -84,31 +109,75 @@ def reset_votes():
     flash("Stimmen zurückgesetzt!", "info")
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/new_game', methods=['GET', 'POST'])
+def new_game():
+    if not is_admin_logged_in():
+        return redirect(url_for('admin_login'))
+    if request.method == 'POST':
+        start_hearts = int(request.form.get('start_hearts', 3))
+        lose_count = int(request.form.get('lose_count', 1))
+        setting = GameSetting.query.first()
+        if not setting:
+            setting = GameSetting(start_hearts=start_hearts, lose_count=lose_count)
+            db.session.add(setting)
+        else:
+            setting.start_hearts = start_hearts
+            setting.lose_count = lose_count
+
+        # Herzen und Stimmen resetten
+        participants = Participant.query.all()
+        for p in participants:
+            p.hearts = start_hearts
+            p.votes = 0
+        db.session.commit()
+
+        # Alle Votes löschen, damit keine ungültigen Verweise bestehen bleiben
+        Vote.query.delete()
+        db.session.commit()
+
+        # Alle Runden löschen
+        Round.query.delete()
+        db.session.commit()
+
+        flash("Neues Spiel gestartet! Alle Spielerherzen, Stimmen und Runden wurden zurückgesetzt.", "success")
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('new_game.html')
+
 @app.route('/player_vote', methods=['GET', 'POST'])
 def player_vote():
     current_r = get_current_round()
     current_round_name = current_r.name if current_r else "Keine Runde"
-    participants = Participant.query.all()
+    active_participants = Participant.query.filter(Participant.hearts > 0).all()
 
-    # Prüfen ob bereits ein Spieler gewählt wurde
     voter_id = session.get('voter_id')
-    if voter_id is not None:
-        # Spieler bereits gewählt, direkt zum Abstimmungsformular
+    current_player = Participant.query.get(voter_id) if voter_id else None
+
+    if current_player and current_player.hearts == 0:
+        flash("Du hast keine Herzen mehr und kannst nicht mehr abstimmen!", "danger")
+        current_player = None
+        session.pop('voter_id', None)
+
+    if current_player is not None:
         step = 'cast_vote'
     else:
-        # Noch kein Spieler gewählt, ggf. POST Anfrage auswerten
         step = 'select_player'
         if request.method == 'POST':
             if 'selected_player' in request.form:
                 selected_player_id = request.form['selected_player']
-                session['voter_id'] = selected_player_id
-                step = 'cast_vote'
-    
-    return render_template('player_vote.html', step=step, participants=participants, current_round_name=current_round_name)
+                selected_p = Participant.query.get(int(selected_player_id))
+                if selected_p and selected_p.hearts > 0:
+                    session['voter_id'] = selected_player_id
+                    current_player = selected_p
+                    step = 'cast_vote'
+                else:
+                    flash("Dieser Spieler kann nicht mehr wählen, da er 0 Herzen hat.", "danger")
+                    step = 'select_player'
+
+    return render_template('player_vote.html', step=step, participants=active_participants, current_round_name=current_round_name, current_player=current_player)
 
 @app.route('/change_user')
 def change_user():
-    # Ermöglicht es den Benutzer zurückzusetzen
     session.pop('voter_id', None)
     flash("Benutzer zurückgesetzt. Wähle einen neuen Spieler aus.", "info")
     return redirect(url_for('player_vote'))
@@ -119,17 +188,21 @@ def cast_vote():
     voted_for_id = request.form.get('participant')
     current_r = get_current_round()
 
+    voter = Participant.query.get(int(voter_id)) if voter_id else None
+    if voter is not None and voter.hearts == 0:
+        flash("Du hast keine Herzen mehr und kannst nicht mehr abstimmen!", "danger")
+        return redirect(url_for('player_vote'))
+
     if voter_id and voted_for_id and current_r:
-        voter = Participant.query.get(int(voter_id))
         voted_for = Participant.query.get(int(voted_for_id))
-        if voter and voted_for:
+        if voted_for and voted_for.hearts > 0 and voter and voter.hearts > 0:
             new_vote = Vote(round_id=current_r.id, voter_id=voter.id, voted_for_id=voted_for.id)
             db.session.add(new_vote)
             voted_for.votes += 1
             db.session.commit()
             flash(f"Deine Stimme wurde für {voted_for.name} abgegeben!", "success")
         else:
-            flash("Ungültige Auswahl", "danger")
+            flash("Ungültige Auswahl (entweder Spieler existiert nicht oder hat 0 Herzen).", "danger")
     else:
         flash("Es ist ein Fehler beim Abstimmen aufgetreten!", "danger")
 
@@ -140,10 +213,35 @@ def get_game_data():
     participants = Participant.query.all()
     current_r = get_current_round()
     current_round_name = current_r.name if current_r else "Keine Runde"
-    participants_data = [{'name': p.name, 'votes': p.votes} for p in participants]
+    participants_data = [{'name': p.name, 'votes': p.votes, 'hearts': p.hearts} for p in participants]
     return jsonify({
         'round_name': current_round_name,
         'participants': participants_data
+    })
+
+# Endpunkt, um aktuelle Stimmen dynamisch zu laden
+@app.route('/get_current_votes', methods=['GET'])
+def get_current_votes():
+    current_r = get_current_round()
+    if not current_r:
+        return jsonify({'votes': [], 'votes_count': 0, 'total_active': 0})
+
+    votes = Vote.query.filter_by(round_id=current_r.id).all()
+    votes_list = []
+    for v in votes:
+        votes_list.append({
+            'voter': v.voter.name,
+            'voted_for': v.voted_for.name
+        })
+    # Aktive Spieler
+    active_participants = Participant.query.filter(Participant.hearts > 0).all()
+    total_active = len(active_participants)
+    votes_count = db.session.query(distinct(Vote.voter_id)).filter(Vote.round_id == current_r.id).count()
+
+    return jsonify({
+        'votes': votes_list,
+        'votes_count': votes_count,
+        'total_active': total_active
     })
 
 if __name__ == '__main__':

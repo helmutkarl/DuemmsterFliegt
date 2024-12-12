@@ -4,6 +4,10 @@
 <h2>User Ansicht</h2>
 <p>Aktuelle Runde: <span id="current-round">{{ current_round_name }}</span></p>
 
+{% if current_player %}
+<p>Du bist: <b>{{ current_player.name }}</b> (Herzen: {{ current_player.hearts }})</p>
+{% endif %}
+
 {% if step == 'select_player' %}
 <form method="POST" action="{{ url_for('player_vote') }}">
     <div class="form-group">
@@ -28,6 +32,8 @@
     </div>
     <button type="submit" class="btn btn-primary mt-2">Abstimmen</button>
 </form>
+{% endif %}
+{% if current_player or step == 'cast_vote' %}
 <a href="{{ url_for('change_user') }}" class="btn btn-link mt-2">Benutzer ändern</a>
 {% endif %}
 {% endblock %}
