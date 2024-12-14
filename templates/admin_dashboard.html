@@ -36,16 +36,30 @@
             <td>{{ participant.votes }}</td>
             <td>{{ participant.hearts }}</td>
             <td>
+                <!-- Spieler entfernen -->
                 <form method="POST" action="{{ url_for('delete_player', player_id=participant.id) }}"
                     style="display:inline;">
                     <button type="submit" class="btn btn-sm btn-danger"
                         onclick="return confirm('Spieler wirklich entfernen?')">Entfernen</button>
+                </form>
+
+                <!-- Herz hinzufügen -->
+                <form method="POST" action="{{ url_for('adjust_hearts', player_id=participant.id, action='add') }}"
+                    style="display:inline; margin-left:5px;">
+                    <button type="submit" class="btn btn-sm btn-success">Herz +1</button>
+                </form>
+
+                <!-- Herz abziehen -->
+                <form method="POST" action="{{ url_for('adjust_hearts', player_id=participant.id, action='sub') }}"
+                    style="display:inline; margin-left:5px;">
+                    <button type="submit" class="btn btn-sm btn-warning">Herz -1</button>
                 </form>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+
 
 <h3>Abgegebene Stimmen dieser Runde</h3>
 <table class="table table-bordered" id="votes-table">

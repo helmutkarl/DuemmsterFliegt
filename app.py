@@ -196,6 +196,12 @@ def cast_vote():
         flash("Du hast keine Herzen mehr und kannst nicht mehr abstimmen!", "danger")
         return redirect(url_for('player_vote'))
 
+    # Prüfen, ob der Wähler bereits in dieser Runde abgestimmt hat
+    already_voted = Vote.query.filter_by(round_id=current_r.id, voter_id=voter_id).first()
+    if already_voted:
+        flash("Du hast in dieser Runde bereits abgestimmt!", "warning")
+        return redirect(url_for('player_vote'))
+
     if voter_id and voted_for_id and current_r:
         voted_for = Participant.query.get(int(voted_for_id))
         if voted_for and voted_for.hearts > 0 and voter and voter.hearts > 0:
@@ -210,6 +216,7 @@ def cast_vote():
         flash("Es ist derzeit keine Runde aktiv, du kannst nicht abstimmen!", "danger")
 
     return redirect(url_for('player_vote'))
+
 
 @app.route('/get_game_data', methods=['GET'])
 def get_game_data():
@@ -276,6 +283,33 @@ def delete_all_data():
 
     flash("Alle Daten wurden gelöscht und die DB neu erstellt!", "warning")
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/adjust_hearts/<int:player_id>', methods=['POST'])
+def adjust_hearts(player_id):
+    if not is_admin_logged_in():
+        return redirect(url_for('admin_login'))
+    player = Participant.query.get(player_id)
+    if not player:
+        flash("Spieler nicht gefunden.", "danger")
+        return redirect(url_for('admin_dashboard'))
+
+    action = request.args.get('action', '')
+    if action == 'add':
+        player.hearts += 1
+        db.session.commit()
+        flash(f"Spieler {player.name} hat nun {player.hearts} Herzen (+1).", "success")
+    elif action == 'sub':
+        if player.hearts > 0:
+            player.hearts -= 1
+            db.session.commit()
+            flash(f"Spieler {player.name} hat nun {player.hearts} Herzen (-1).", "warning")
+        else:
+            flash(f"Spieler {player.name} hat bereits 0 Herzen, kann nicht weiter reduziert werden.", "danger")
+    else:
+        flash("Ungültige Aktion.", "danger")
+
+    return redirect(url_for('admin_dashboard'))
+
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0")
