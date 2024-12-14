@@ -223,7 +223,7 @@ def get_game_data():
     participants = Participant.query.all()
     current_r = get_current_round()
     current_round_name = current_r.name if current_r else "Keine Runde"
-    participants_data = [{'name': p.name, 'votes': p.votes, 'hearts': p.hearts} for p in participants]
+    participants_data = [{'id': p.id, 'name': p.name, 'votes': p.votes, 'hearts': p.hearts} for p in participants]
     return jsonify({
         'round_name': current_round_name,
         'participants': participants_data

@@ -89,14 +89,12 @@
         fetch("{{ url_for('get_game_data') }}")
             .then(response => response.json())
             .then(data => {
-                // Runde aktualisieren
                 document.getElementById('current-round').textContent = data.round_name;
-
-                // Teilnehmer aktualisieren
                 const tbody = document.getElementById('participants-body');
                 tbody.innerHTML = '';
                 data.participants.forEach(p => {
                     const row = document.createElement('tr');
+
                     const nameCell = document.createElement('td');
                     const votesCell = document.createElement('td');
                     const heartsCell = document.createElement('td');
@@ -106,24 +104,50 @@
                     votesCell.textContent = p.votes;
                     heartsCell.textContent = p.hearts;
 
-                    // Button für Entfernen
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = "{{ url_for('delete_player', player_id=0) }}".replace('0', p.id);
-                    form.style.display = 'inline';
-                    const btn = document.createElement('button');
-                    btn.type = 'submit';
-                    btn.className = 'btn btn-sm btn-danger';
-                    btn.textContent = 'Entfernen';
-                    btn.onclick = () => confirm('Spieler wirklich entfernen?');
-                    form.appendChild(btn);
-                    actionCell.appendChild(form);
+                    // Remove player form
+                    const removeForm = document.createElement('form');
+                    removeForm.method = 'POST';
+                    removeForm.action = "{{ url_for('delete_player', player_id=0) }}".replace('0', p.id);
+                    removeForm.style.display = 'inline';
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'submit';
+                    removeBtn.className = 'btn btn-sm btn-danger';
+                    removeBtn.textContent = 'Entfernen';
+                    removeBtn.onclick = () => confirm('Spieler wirklich entfernen?');
+                    removeForm.appendChild(removeBtn);
+
+                    // Heart +1 form
+                    const addForm = document.createElement('form');
+                    addForm.method = 'POST';
+                    addForm.action = "{{ url_for('adjust_hearts', player_id=0) }}?action=add".replace('0', p.id);
+                    addForm.style.display = 'inline';
+                    addForm.style.marginLeft = '5px';
+                    const addBtn = document.createElement('button');
+                    addBtn.type = 'submit';
+                    addBtn.className = 'btn btn-sm btn-success';
+                    addBtn.textContent = 'Herz +1';
+                    addForm.appendChild(addBtn);
+
+                    // Heart -1 form
+                    const subForm = document.createElement('form');
+                    subForm.method = 'POST';
+                    subForm.action = "{{ url_for('adjust_hearts', player_id=0) }}?action=sub".replace('0', p.id);
+                    subForm.style.display = 'inline';
+                    subForm.style.marginLeft = '5px';
+                    const subBtn = document.createElement('button');
+                    subBtn.type = 'submit';
+                    subBtn.className = 'btn btn-sm btn-warning';
+                    subBtn.textContent = 'Herz -1';
+                    subForm.appendChild(subBtn);
+
+                    actionCell.appendChild(removeForm);
+                    actionCell.appendChild(addForm);
+                    actionCell.appendChild(subForm);
 
                     row.appendChild(nameCell);
                     row.appendChild(votesCell);
                     row.appendChild(heartsCell);
                     row.appendChild(actionCell);
-
                     tbody.appendChild(row);
                 });
             })
@@ -166,7 +190,7 @@
             .catch(error => console.error('Error fetching votes data:', error));
     }
 
-    setInterval(updateGameData, 5000);
-    setInterval(updateVotesData, 5000);
+    setInterval(updateGameData, 2000);
+    setInterval(updateVotesData, 2000);
 </script>
 {% endblock %}
